@@ -12,6 +12,12 @@ function destroy(id) {
     }
 }
 
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 const estadoClasses = {
     PLANIFICACION: 'bg-yellow-100 text-yellow-800',
     ABIERTA: 'bg-green-100 text-green-800',
@@ -60,8 +66,8 @@ const estadoClasses = {
                 <tbody class="bg-white divide-y divide-gray-200">
                     <tr v-for="g in gestiones.data" :key="g.id" class="hover:bg-gray-50">
                         <td class="px-6 py-4 text-sm font-bold text-gray-900">{{ g.anio }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-700">{{ g.fecha_inicio }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-700">{{ g.fecha_fin }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(g.fecha_inicio) }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(g.fecha_fin) }}</td>
                         <td class="px-6 py-4 text-center">
                             <span
                                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"

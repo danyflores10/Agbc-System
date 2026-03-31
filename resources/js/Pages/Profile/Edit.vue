@@ -72,7 +72,7 @@ function removeAvatar() {
 }
 
 function updateProfile() {
-    profileForm.put(route('profile.update'), {
+    profileForm.patch(route('profile.update'), {
         onSuccess: () => {
             profileSuccess.value = true;
             setTimeout(() => profileSuccess.value = false, 3000);

@@ -4,6 +4,12 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 
 defineProps({ gestion: Object });
 
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 const estadoClasses = {
     PLANIFICACION: 'bg-yellow-100 text-yellow-800',
     ABIERTA: 'bg-green-100 text-green-800',
@@ -36,11 +42,11 @@ const estadoClasses = {
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Fecha Inicio</dt>
-                        <dd class="text-sm font-medium text-gray-900">{{ gestion.fecha_inicio }}</dd>
+                        <dd class="text-sm font-medium text-gray-900">{{ formatDate(gestion.fecha_inicio) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Fecha Fin</dt>
-                        <dd class="text-sm font-medium text-gray-900">{{ gestion.fecha_fin }}</dd>
+                        <dd class="text-sm font-medium text-gray-900">{{ formatDate(gestion.fecha_fin) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Estado</dt>
@@ -75,8 +81,8 @@ const estadoClasses = {
                         <tr v-for="p in gestion.periodos" :key="p.id" class="hover:bg-gray-50">
                             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ p.mes }}</td>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ p.nombre }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ p.fecha_inicio }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ p.fecha_fin }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(p.fecha_inicio) }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(p.fecha_fin) }}</td>
                             <td class="px-6 py-4 text-center">
                                 <span
                                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -120,7 +126,7 @@ const estadoClasses = {
                                     {{ p.estado }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ p.created_at }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ formatDate(p.created_at) }}</td>
                             <td class="px-6 py-4 text-right">
                                 <Link :href="route('presupuestos.show', p.id)" class="text-blue-600 hover:text-blue-800 text-sm">Ver</Link>
                             </td>
