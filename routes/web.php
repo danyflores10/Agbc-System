@@ -89,7 +89,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/auditoria', [BitacoraController::class, 'index'])->name('auditoria.index');
 
     // Usuarios
-    Route::resource('usuarios', UsuarioController::class);
+    Route::resource('usuarios', UsuarioController::class)->except('destroy');
+    Route::patch('usuarios/{usuario}/toggle-estado', [UsuarioController::class, 'toggleEstado'])->name('usuarios.toggle-estado');
+    Route::delete('usuarios/{usuario}/avatar', [UsuarioController::class, 'deleteAvatar'])->name('usuarios.delete-avatar');
 
     // Laravel Pulse (embebido)
     Route::get('/sistema/pulse', function () {

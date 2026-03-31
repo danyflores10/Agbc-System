@@ -2,12 +2,15 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 defineProps({
     presupuestos: Object,
     gestiones: Array,
     filters: Object,
 });
+
+const { confirmDelete } = useConfirm();
 
 function formatMoney(val) {
     return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(val || 0);
@@ -28,8 +31,8 @@ function applyFilter(key, value) {
     }, { preserveState: true, replace: true });
 }
 
-function destroy(id) {
-    if (confirm('¿Está seguro de eliminar este presupuesto?')) {
+async function destroy(id) {
+    if (await confirmDelete('El presupuesto será eliminado permanentemente.')) {
         router.delete(route('presupuestos.destroy', id));
     }
 }
@@ -92,7 +95,7 @@ function destroy(id) {
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-500">
-                                {{ p.creado_por_user?.nombre_completo || (p.creado_por_user?.nombres + ' ' + p.creado_por_user?.apellidos) }}
+                                {{ p.creador?.nombre_completo || (p.creador?.nombres && p.creador?.apellidos ? p.creador.nombres + ' ' + p.creador.apellidos : '—') }}
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-1.5">

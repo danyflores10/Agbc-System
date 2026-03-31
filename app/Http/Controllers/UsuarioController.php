@@ -8,6 +8,7 @@ use App\Models\CentroCosto;
 use App\Models\BitacoraAuditoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class UsuarioController extends Controller
@@ -55,7 +56,13 @@ class UsuarioController extends Controller
             'roles.*' => 'exists:roles,id',
             'centros_costo' => 'array',
             'centro_costo_principal' => 'nullable|integer',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+        }
 
         $user = User::create([
             'nombres' => $validated['nombres'],
@@ -65,6 +72,7 @@ class UsuarioController extends Controller
             'telefono' => $validated['telefono'] ?? null,
             'cargo' => $validated['cargo'] ?? null,
             'estado' => $validated['estado'],
+            'avatar' => $avatarPath,
         ]);
 
         $user->roles()->sync($request->roles ?? []);
@@ -111,6 +119,7 @@ class UsuarioController extends Controller
             'roles.*' => 'exists:roles,id',
             'centros_costo' => 'array',
             'centro_costo_principal' => 'nullable|integer',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $old = $usuario->toArray();
@@ -118,6 +127,13 @@ class UsuarioController extends Controller
         $updateData = collect($validated)->only(['nombres', 'apellidos', 'email', 'telefono', 'cargo', 'estado'])->toArray();
         if (!empty($validated['password'])) {
             $updateData['password_hash'] = Hash::make($validated['password']);
+        }
+
+        if ($request->hasFile('avatar')) {
+            if ($usuario->avatar && Storage::disk('public')->exists($usuario->avatar)) {
+                Storage::disk('public')->delete($usuario->avatar);
+            }
+            $updateData['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
         $usuario->update($updateData);
@@ -138,12 +154,37 @@ class UsuarioController extends Controller
         return redirect()->route('usuarios.index')->with('success', 'Usuario actualizado correctamente.');
     }
 
-    public function destroy(User $usuario)
+    public function toggleEstado(User $usuario)
     {
-        $usuario->roles()->detach();
-        $usuario->centrosCosto()->detach();
-        $usuario->delete();
+        $old = $usuario->toArray();
 
-        return redirect()->route('usuarios.index')->with('success', 'Usuario eliminado correctamente.');
+        $nuevoEstado = $usuario->estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+        $usuario->update(['estado' => $nuevoEstado]);
+
+        BitacoraAuditoria::registrar(
+            'UPDATE',
+            'usuarios',
+            $usuario->id,
+            request(),
+            $old,
+            $usuario->fresh()->toArray()
+        );
+
+        $mensaje = $nuevoEstado === 'ACTIVO'
+            ? "Usuario {$usuario->nombre_completo} activado correctamente."
+            : "Usuario {$usuario->nombre_completo} desactivado correctamente.";
+
+        return redirect()->route('usuarios.index')->with('success', $mensaje);
+    }
+
+    public function deleteAvatar(User $usuario)
+    {
+        if ($usuario->avatar && Storage::disk('public')->exists($usuario->avatar)) {
+            Storage::disk('public')->delete($usuario->avatar);
+        }
+
+        $usuario->update(['avatar' => null]);
+
+        return back()->with('success', 'Avatar eliminado correctamente.');
     }
 }

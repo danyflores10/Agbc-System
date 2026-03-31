@@ -1,8 +1,8 @@
 <script setup>
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 const props = defineProps({
     presupuesto: Object,
@@ -12,6 +12,8 @@ const props = defineProps({
     centrosCosto: Array,
     partidas: Array,
 });
+
+const { confirmDelete } = useConfirm();
 
 function formatMoney(val) {
     return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(val || 0);
@@ -42,32 +44,10 @@ function addDetalle() {
     });
 }
 
-// Modal de confirmación de eliminación
-const showDeleteModal = ref(false);
-const deletingId = ref(null);
-const deletingLoading = ref(false);
-
-function confirmDelete(id) {
-    deletingId.value = id;
-    showDeleteModal.value = true;
-}
-
-function cancelDelete() {
-    showDeleteModal.value = false;
-    deletingId.value = null;
-}
-
-function executeDelete() {
-    if (!deletingId.value) return;
-    deletingLoading.value = true;
-    router.delete(route('presupuesto-detalles.destroy', deletingId.value), {
-        preserveScroll: true,
-        onFinish: () => {
-            deletingLoading.value = false;
-            showDeleteModal.value = false;
-            deletingId.value = null;
-        },
-    });
+async function destroyDetalle(id) {
+    if (await confirmDelete('El detalle del presupuesto será eliminado permanentemente.')) {
+        router.delete(route('presupuesto-detalles.destroy', id), { preserveScroll: true });
+    }
 }
 </script>
 
@@ -101,14 +81,14 @@ function executeDelete() {
                     <div>
                         <dt class="text-sm text-gray-500">Creado por</dt>
                         <dd class="text-sm font-medium text-gray-900">
-                            {{ presupuesto.creado_por_user?.nombre_completo || (presupuesto.creado_por_user?.nombres + ' ' + presupuesto.creado_por_user?.apellidos) }}
+                            {{ presupuesto.creador?.nombre_completo || (presupuesto.creador?.nombres && presupuesto.creador?.apellidos ? presupuesto.creador.nombres + ' ' + presupuesto.creador.apellidos : '—') }}
                         </dd>
                     </div>
                     <div>
                         <dt class="text-sm text-gray-500">Aprobado por</dt>
                         <dd class="text-sm font-medium text-gray-900">
-                            <template v-if="presupuesto.aprobado_por_user">
-                                {{ presupuesto.aprobado_por_user?.nombre_completo || (presupuesto.aprobado_por_user?.nombres + ' ' + presupuesto.aprobado_por_user?.apellidos) }}
+                            <template v-if="presupuesto.aprobador">
+                                {{ presupuesto.aprobador?.nombre_completo || (presupuesto.aprobador?.nombres + ' ' + presupuesto.aprobador?.apellidos) }}
                                 <span v-if="presupuesto.fecha_aprobacion" class="text-gray-400 text-xs ml-1">({{ presupuesto.fecha_aprobacion }})</span>
                             </template>
                             <span v-else class="text-gray-400">—</span>
@@ -211,7 +191,7 @@ function executeDelete() {
                                 <td class="px-4 py-3 text-sm text-right font-semibold text-green-600">{{ formatMoney(d.monto_vigente) }}</td>
                                 <td class="px-4 py-3 text-right">
                                     <button
-                                        @click="confirmDelete(d.id)"
+                                        @click="destroyDetalle(d.id)"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold text-red-600 bg-red-50 border border-red-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-150 shadow-sm"
                                     >
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,69 +210,5 @@ function executeDelete() {
                 <Pagination :data="detalles" />
             </div>
         </div>
-
-        <!-- Modal de confirmación de eliminación -->
-        <Teleport to="body">
-            <Transition
-                enter-active-class="transition-opacity duration-200"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="transition-opacity duration-150"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
-            >
-                <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <!-- Overlay -->
-                    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="cancelDelete"></div>
-
-                    <!-- Panel -->
-                    <Transition
-                        enter-active-class="transition-all duration-200"
-                        enter-from-class="opacity-0 scale-90"
-                        enter-to-class="opacity-100 scale-100"
-                        leave-active-class="transition-all duration-150"
-                        leave-from-class="opacity-100 scale-100"
-                        leave-to-class="opacity-0 scale-90"
-                    >
-                        <div v-if="showDeleteModal" class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center space-y-4">
-                            <!-- Icono -->
-                            <div class="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-red-100">
-                                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                            </div>
-
-                            <!-- Texto -->
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900">¿Eliminar detalle?</h3>
-                                <p class="mt-1 text-sm text-gray-500">Esta acción no se puede deshacer. El detalle del presupuesto será eliminado permanentemente.</p>
-                            </div>
-
-                            <!-- Botones -->
-                            <div class="flex gap-3 pt-2">
-                                <button
-                                    @click="cancelDelete"
-                                    :disabled="deletingLoading"
-                                    class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    @click="executeDelete"
-                                    :disabled="deletingLoading"
-                                    class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    <svg v-if="deletingLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                                    </svg>
-                                    {{ deletingLoading ? 'Eliminando...' : 'Sí, eliminar' }}
-                                </button>
-                            </div>
-                        </div>
-                    </Transition>
-                </div>
-            </Transition>
-        </Teleport>
     </AppLayout>
 </template>

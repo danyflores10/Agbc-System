@@ -6,7 +6,17 @@ const props = defineProps({
     data: Object,
 });
 
-const links = computed(() => props.data?.links || []);
+const links = computed(() => {
+    const raw = props.data?.links || [];
+    return raw.map(link => ({
+        ...link,
+        label: link.label
+            ?.replace('pagination.previous', '« Anterior')
+            ?.replace('pagination.next', 'Siguiente »')
+            ?.replace('&laquo; Previous', '« Anterior')
+            ?.replace('Next &raquo;', 'Siguiente »'),
+    }));
+});
 </script>
 
 <template>

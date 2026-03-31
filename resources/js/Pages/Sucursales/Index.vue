@@ -3,11 +3,14 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SearchInput from '@/Components/SearchInput.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 defineProps({ sucursales: Object, filters: Object });
 
-function destroy(id) {
-    if (confirm('¿Está seguro de eliminar esta sucursal?')) {
+const { confirmDelete } = useConfirm();
+
+async function destroy(id) {
+    if (await confirmDelete('La sucursal será eliminada permanentemente.')) {
         router.delete(route('sucursales.destroy', id));
     }
 }

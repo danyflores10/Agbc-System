@@ -22,12 +22,12 @@ class Presupuesto extends Model
         return $this->belongsTo(GestionFiscal::class, 'gestion_id');
     }
 
-    public function creadoPor()
+    public function creador()
     {
         return $this->belongsTo(User::class, 'creado_por');
     }
 
-    public function aprobadoPor()
+    public function aprobador()
     {
         return $this->belongsTo(User::class, 'aprobado_por');
     }

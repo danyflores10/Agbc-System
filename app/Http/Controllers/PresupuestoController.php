@@ -17,7 +17,7 @@ class PresupuestoController extends Controller
 {
     public function index(Request $request)
     {
-        $presupuestos = Presupuesto::with('gestion', 'creadoPor')
+        $presupuestos = Presupuesto::with('gestion', 'creador')
             ->withCount('detalles')
             ->when($request->gestion_id, fn($q, $g) => $q->where('gestion_id', $g))
             ->when($request->estado, fn($q, $e) => $q->where('estado', $e))
@@ -61,7 +61,7 @@ class PresupuestoController extends Controller
 
     public function show(Presupuesto $presupuesto)
     {
-        $presupuesto->load('gestion', 'creadoPor', 'aprobadoPor');
+        $presupuesto->load('gestion', 'creador', 'aprobador');
 
         $detalles = PresupuestoDetalle::with('centroCosto.area', 'partida', 'periodo')
             ->where('presupuesto_id', $presupuesto->id)

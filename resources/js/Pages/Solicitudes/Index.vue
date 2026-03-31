@@ -3,12 +3,15 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { ref, watch } from 'vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 const props = defineProps({
     solicitudes: Object,
     gestiones: Array,
     filters: Object,
 });
+
+const { confirmDelete } = useConfirm();
 
 function formatMoney(val) {
     return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(val || 0);
@@ -34,8 +37,8 @@ function applyFilters() {
     }, { preserveState: true, replace: true });
 }
 
-function destroy(id) {
-    if (confirm('¿Está seguro de eliminar esta solicitud?')) {
+async function destroy(id) {
+    if (await confirmDelete('La solicitud de gasto será eliminada permanentemente.')) {
         router.delete(route('solicitudes.destroy', id));
     }
 }

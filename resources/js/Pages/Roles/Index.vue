@@ -3,11 +3,14 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SearchInput from '@/Components/SearchInput.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 defineProps({ roles: Object, filters: Object });
 
-function destroy(id) {
-    if (confirm('¿Está seguro de eliminar este rol?')) {
+const { confirmDelete } = useConfirm();
+
+async function destroy(id) {
+    if (await confirmDelete('El rol será eliminado permanentemente.')) {
         router.delete(route('roles.destroy', id));
     }
 }

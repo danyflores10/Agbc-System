@@ -4,11 +4,14 @@ import { ref, watch } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SearchInput from '@/Components/SearchInput.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 const props = defineProps({
     usuarios: Object,
     filters: Object,
 });
+
+const { confirmAction } = useConfirm();
 
 const estadoFilter = ref(props.filters?.estado || '');
 
@@ -19,9 +22,21 @@ watch(estadoFilter, (value) => {
     }, { preserveState: true, replace: true });
 });
 
-function destroy(id) {
-    if (confirm('¿Está seguro de eliminar este usuario? Esta acción no se puede deshacer.')) {
-        router.delete(route('usuarios.destroy', id));
+async function toggleEstado(usuario) {
+    const esActivo = usuario.estado === 'ACTIVO';
+    const nombre = `${usuario.nombres} ${usuario.apellidos}`;
+
+    const confirmed = await confirmAction({
+        title: esActivo ? '¿Desactivar usuario?' : '¿Activar usuario?',
+        text: esActivo
+            ? `<b>${nombre}</b> ya no podrá iniciar sesión en el sistema.`
+            : `<b>${nombre}</b> podrá acceder nuevamente al sistema.`,
+        type: esActivo ? 'warning' : 'success',
+        confirmText: esActivo ? 'Sí, desactivar' : 'Sí, activar',
+    });
+
+    if (confirmed) {
+        router.patch(route('usuarios.toggle-estado', usuario.id));
     }
 }
 
@@ -110,9 +125,23 @@ const estadoBadge = (estado) => {
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         Editar
                                     </Link>
-                                    <button @click="destroy(u.id)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-sm transition-all duration-200">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        Eliminar
+                                    <!-- Desactivar (si está ACTIVO) -->
+                                    <button
+                                        v-if="u.estado === 'ACTIVO'"
+                                        @click="toggleEstado(u)"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-sm transition-all duration-200"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                        Desactivar
+                                    </button>
+                                    <!-- Activar (si está INACTIVO o BLOQUEADO) -->
+                                    <button
+                                        v-else
+                                        @click="toggleEstado(u)"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 shadow-sm transition-all duration-200"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        Activar
                                     </button>
                                 </div>
                             </td>

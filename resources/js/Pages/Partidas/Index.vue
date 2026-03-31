@@ -3,8 +3,11 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SearchInput from '@/Components/SearchInput.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 defineProps({ partidas: Object, filters: Object });
+
+const { confirmDelete } = useConfirm();
 
 const tipoBadge = {
     FUNCIONAMIENTO: 'bg-blue-100 text-blue-800',
@@ -13,8 +16,8 @@ const tipoBadge = {
     CONTINGENCIA: 'bg-red-100 text-red-800',
 };
 
-function destroy(id) {
-    if (confirm('¿Está seguro de eliminar esta partida?')) {
+async function destroy(id) {
+    if (await confirmDelete('La partida presupuestaria será eliminada permanentemente.')) {
         router.delete(route('partidas.destroy', id));
     }
 }

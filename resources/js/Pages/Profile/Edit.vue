@@ -2,6 +2,7 @@
 import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 const props = defineProps({
     usuario: Object,
@@ -60,8 +61,10 @@ function onAvatarSelected(e) {
     });
 }
 
-function removeAvatar() {
-    if (!confirm('¿Eliminar avatar?')) return;
+const { confirmDelete } = useConfirm();
+
+async function removeAvatar() {
+    if (!await confirmDelete('La foto de perfil será eliminada.')) return;
     router.delete(route('profile.avatar.delete'), {
         preserveScroll: true,
         onSuccess: () => {

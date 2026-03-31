@@ -3,8 +3,11 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import SearchInput from '@/Components/SearchInput.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 defineProps({ centros: Object, areas: Array, filters: Object });
+
+const { confirmDelete } = useConfirm();
 
 const tipoBadge = {
     ADMINISTRATIVO: 'bg-blue-100 text-blue-800',
@@ -18,8 +21,8 @@ function applyFilter(filters, key, value) {
     router.get(route('centros-costo.index'), params, { preserveState: true, replace: true });
 }
 
-function destroy(id) {
-    if (confirm('¿Está seguro de eliminar este centro de costo?')) {
+async function destroy(id) {
+    if (await confirmDelete('El centro de costo será eliminado permanentemente.')) {
         router.delete(route('centros-costo.destroy', id));
     }
 }
