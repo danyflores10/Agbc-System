@@ -44,6 +44,8 @@ class ProveedorController extends Controller
         $proveedor = Proveedor::create($validated);
         BitacoraAuditoria::registrar('INSERT', 'proveedores', $proveedor->id, $request, null, $proveedor->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($proveedor)->event('crear')->log("Creó el proveedor '{$proveedor->razon_social}'");
+
         return redirect()->route('proveedores.index')->with('success', 'Proveedor creado correctamente.');
     }
 
@@ -68,6 +70,8 @@ class ProveedorController extends Controller
         $proveedore->update($validated);
         BitacoraAuditoria::registrar('UPDATE', 'proveedores', $proveedore->id, $request, $old, $proveedore->fresh()->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($proveedore)->event('actualizar')->log("Actualizó el proveedor '{$proveedore->razon_social}'");
+
         return redirect()->route('proveedores.index')->with('success', 'Proveedor actualizado correctamente.');
     }
 
@@ -76,6 +80,8 @@ class ProveedorController extends Controller
         if ($proveedore->ejecuciones()->exists()) {
             return back()->with('error', 'No se puede eliminar un proveedor con ejecuciones registradas.');
         }
+
+        activity('catálogos')->causedBy(request()->user())->event('eliminar')->withProperties(['razon_social' => $proveedore->razon_social, 'nit' => $proveedore->nit])->log("Eliminó el proveedor '{$proveedore->razon_social}'");
 
         $proveedore->delete();
         return redirect()->route('proveedores.index')->with('success', 'Proveedor eliminado correctamente.');

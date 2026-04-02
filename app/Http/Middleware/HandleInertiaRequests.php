@@ -23,8 +23,9 @@ class HandleInertiaRequests extends Middleware
                     $request->user()->only('id', 'nombres', 'apellidos', 'email', 'cargo', 'estado', 'avatar'),
                     [
                         'nombre_completo' => $request->user()->nombre_completo,
-                        'roles' => $request->user()->roles->pluck('nombre'),
+                        'roles' => $request->user()->getRoleNames(),
                         'es_admin' => $request->user()->esAdmin(),
+                        'permisos' => $request->user()->getAllPermissions()->pluck('nombre')->values(),
                         'avatar_url' => $request->user()->avatar ? '/storage/' . $request->user()->avatar : null,
                     ]
                 ) : null,

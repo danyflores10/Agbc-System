@@ -46,6 +46,8 @@ class SucursalController extends Controller
         $sucursal = Sucursal::create($validated);
         BitacoraAuditoria::registrar('INSERT', 'sucursales', $sucursal->id, $request, null, $sucursal->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($sucursal)->event('crear')->log("Creó la sucursal '{$sucursal->nombre}' ({$sucursal->codigo})");
+
         return redirect()->route('sucursales.index')->with('success', 'Sucursal creada correctamente.');
     }
 
@@ -72,6 +74,8 @@ class SucursalController extends Controller
         $sucursal->update($validated);
         BitacoraAuditoria::registrar('UPDATE', 'sucursales', $sucursal->id, $request, $old, $sucursal->fresh()->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($sucursal)->event('actualizar')->log("Actualizó la sucursal '{$sucursal->nombre}' ({$sucursal->codigo})");
+
         return redirect()->route('sucursales.index')->with('success', 'Sucursal actualizada correctamente.');
     }
 
@@ -80,6 +84,8 @@ class SucursalController extends Controller
         if ($sucursal->centrosCosto()->exists()) {
             return back()->with('error', 'No se puede eliminar una sucursal con centros de costo asignados.');
         }
+
+        activity('catálogos')->causedBy(request()->user())->event('eliminar')->withProperties(['codigo' => $sucursal->codigo, 'nombre' => $sucursal->nombre])->log("Eliminó la sucursal '{$sucursal->nombre}' ({$sucursal->codigo})");
 
         $sucursal->delete();
         return redirect()->route('sucursales.index')->with('success', 'Sucursal eliminada correctamente.');

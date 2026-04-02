@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\CentroCostoController;
@@ -28,7 +29,7 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Perfil
+    // Perfil (acceso para todos los usuarios autenticados)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
@@ -36,48 +37,48 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
 
     // Gestiones Fiscales
-    Route::resource('gestiones', GestionFiscalController::class);
+    Route::resource('gestiones', GestionFiscalController::class)->middleware('permission:gestiones.ver');
 
     // Áreas
-    Route::resource('areas', AreaController::class)->except('show');
+    Route::resource('areas', AreaController::class)->except('show')->middleware('permission:areas.ver');
 
     // Sucursales
-    Route::resource('sucursales', SucursalController::class)->except('show');
+    Route::resource('sucursales', SucursalController::class)->except('show')->middleware('permission:sucursales.ver');
 
     // Centros de Costo
-    Route::resource('centros-costo', CentroCostoController::class)->except('show');
+    Route::resource('centros-costo', CentroCostoController::class)->except('show')->middleware('permission:centros_costo.ver');
 
     // Proveedores
-    Route::resource('proveedores', ProveedorController::class)->except('show');
+    Route::resource('proveedores', ProveedorController::class)->except('show')->middleware('permission:proveedores.ver');
 
     // Roles
-    Route::resource('roles', RolController::class)->except('show');
+    Route::resource('roles', RolController::class)->except('show')->middleware('permission:roles.ver');
 
     // Partidas Presupuestarias
-    Route::resource('partidas', PartidaPresupuestariaController::class)->except('show');
+    Route::resource('partidas', PartidaPresupuestariaController::class)->except('show')->middleware('permission:partidas.ver');
 
     // Presupuestos
-    Route::resource('presupuestos', PresupuestoController::class);
+    Route::resource('presupuestos', PresupuestoController::class)->middleware('permission:presupuestos.ver');
 
-    // Presupuesto Detalles (inline desde show de presupuestos)
-    Route::post('/presupuesto-detalles', [PresupuestoDetalleController::class, 'store'])->name('presupuesto-detalles.store');
-    Route::put('/presupuesto-detalles/{detalle}', [PresupuestoDetalleController::class, 'update'])->name('presupuesto-detalles.update');
-    Route::delete('/presupuesto-detalles/{detalle}', [PresupuestoDetalleController::class, 'destroy'])->name('presupuesto-detalles.destroy');
+    // Presupuesto Detalles
+    Route::post('/presupuesto-detalles', [PresupuestoDetalleController::class, 'store'])->name('presupuesto-detalles.store')->middleware('permission:presupuestos.detalle');
+    Route::put('/presupuesto-detalles/{detalle}', [PresupuestoDetalleController::class, 'update'])->name('presupuesto-detalles.update')->middleware('permission:presupuestos.detalle');
+    Route::delete('/presupuesto-detalles/{detalle}', [PresupuestoDetalleController::class, 'destroy'])->name('presupuesto-detalles.destroy')->middleware('permission:presupuestos.detalle');
 
     // Solicitudes de Gasto
-    Route::resource('solicitudes', SolicitudGastoController::class);
+    Route::resource('solicitudes', SolicitudGastoController::class)->middleware('permission:solicitudes.ver');
 
     // Aprobaciones
-    Route::get('/aprobaciones', [SolicitudAprobacionController::class, 'index'])->name('aprobaciones.index');
-    Route::post('/aprobaciones/{aprobacion}/aprobar', [SolicitudAprobacionController::class, 'aprobar'])->name('aprobaciones.aprobar');
-    Route::post('/aprobaciones/{aprobacion}/rechazar', [SolicitudAprobacionController::class, 'rechazar'])->name('aprobaciones.rechazar');
+    Route::get('/aprobaciones', [SolicitudAprobacionController::class, 'index'])->name('aprobaciones.index')->middleware('permission:aprobaciones.ver');
+    Route::post('/aprobaciones/{aprobacion}/aprobar', [SolicitudAprobacionController::class, 'aprobar'])->name('aprobaciones.aprobar')->middleware('permission:aprobaciones.aprobar');
+    Route::post('/aprobaciones/{aprobacion}/rechazar', [SolicitudAprobacionController::class, 'rechazar'])->name('aprobaciones.rechazar')->middleware('permission:aprobaciones.rechazar');
 
     // Ejecuciones de Gasto
-    Route::resource('ejecuciones', EjecucionGastoController::class)->only(['index', 'create', 'store', 'show']);
-    Route::post('/ejecuciones/{ejecucion}/adjunto', [EjecucionGastoController::class, 'subirAdjunto'])->name('ejecuciones.adjunto');
+    Route::resource('ejecuciones', EjecucionGastoController::class)->only(['index', 'create', 'store', 'show'])->middleware('permission:ejecuciones.ver');
+    Route::post('/ejecuciones/{ejecucion}/adjunto', [EjecucionGastoController::class, 'subirAdjunto'])->name('ejecuciones.adjunto')->middleware('permission:ejecuciones.adjuntos');
 
     // Reportes
-    Route::prefix('reportes')->name('reportes.')->group(function () {
+    Route::prefix('reportes')->name('reportes.')->middleware('permission:reportes.ver')->group(function () {
         Route::get('/', [ReporteController::class, 'index'])->name('index');
         Route::get('/por-area', [ReporteController::class, 'porArea'])->name('por-area');
         Route::get('/por-sucursal', [ReporteController::class, 'porSucursal'])->name('por-sucursal');
@@ -86,17 +87,21 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Bitácora de Auditoría
-    Route::get('/auditoria', [BitacoraController::class, 'index'])->name('auditoria.index');
+    Route::get('/auditoria', [BitacoraController::class, 'index'])->name('auditoria.index')->middleware('permission:auditoria.ver');
+    Route::get('/auditoria/{id}', [BitacoraController::class, 'show'])->name('auditoria.show')->middleware('permission:auditoria.ver');
+
+    // Registro de Actividad
+    Route::get('/actividad', [ActivityLogController::class, 'index'])->name('actividad.index')->middleware('permission:auditoria.ver');
 
     // Usuarios
-    Route::resource('usuarios', UsuarioController::class)->except('destroy');
-    Route::patch('usuarios/{usuario}/toggle-estado', [UsuarioController::class, 'toggleEstado'])->name('usuarios.toggle-estado');
-    Route::delete('usuarios/{usuario}/avatar', [UsuarioController::class, 'deleteAvatar'])->name('usuarios.delete-avatar');
+    Route::resource('usuarios', UsuarioController::class)->except('destroy')->middleware('permission:usuarios.ver');
+    Route::patch('usuarios/{usuario}/toggle-estado', [UsuarioController::class, 'toggleEstado'])->name('usuarios.toggle-estado')->middleware('permission:usuarios.toggle_estado');
+    Route::delete('usuarios/{usuario}/avatar', [UsuarioController::class, 'deleteAvatar'])->name('usuarios.delete-avatar')->middleware('permission:usuarios.editar');
 
-    // Laravel Pulse (embebido)
+    // Laravel Pulse
     Route::get('/sistema/pulse', function () {
         return Inertia::render('Pulse/Index');
-    })->name('sistema.pulse');
+    })->name('sistema.pulse')->middleware('permission:sistema.pulse');
 });
 
 require __DIR__.'/auth.php';

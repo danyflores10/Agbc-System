@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class GestionFiscal extends Model
+class GestionFiscal extends Model implements Auditable
 {
+    use AuditableTrait;
+
     protected $table = 'gestiones_fiscales';
 
     protected $fillable = ['anio', 'fecha_inicio', 'fecha_fin', 'estado'];

@@ -5,11 +5,14 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 use App\Notifications\ResetPasswordNotification;
 
-class User extends Authenticatable
+class User extends Authenticatable implements Auditable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles, AuditableTrait;
 
     protected $table = 'usuarios';
 
@@ -45,11 +48,6 @@ class User extends Authenticatable
     }
 
     // Relationships
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class, 'usuario_roles', 'usuario_id', 'rol_id');
-    }
-
     public function centrosCosto()
     {
         return $this->belongsToMany(CentroCosto::class, 'usuario_centros_costo', 'usuario_id', 'centro_costo_id')
@@ -65,12 +63,17 @@ class User extends Authenticatable
     // Helpers
     public function tieneRol($rolNombre)
     {
-        return $this->roles->contains('nombre', $rolNombre);
+        return $this->hasRole($rolNombre);
+    }
+
+    public function tienePermiso($permiso)
+    {
+        return $this->hasPermissionTo($permiso);
     }
 
     public function esAdmin()
     {
-        return $this->tieneRol('SUPER_ADMIN') || $this->tieneRol('ADMINISTRADOR');
+        return $this->tieneRol('SUPER_ADMIN') || $this->tieneRol('ADMINIS');
     }
 
     public function esFinanciero()
@@ -91,5 +94,10 @@ class User extends Authenticatable
     public function centroCostoPrincipal()
     {
         return $this->centrosCosto()->wherePivot('es_principal', true)->first();
+    }
+
+    public function obtenerPermisos()
+    {
+        return $this->getAllPermissions()->pluck('nombre');
     }
 }

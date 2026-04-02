@@ -10,16 +10,21 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            ['nombre' => 'Administrador', 'slug' => 'admin', 'descripcion' => 'Acceso total al sistema'],
-            ['nombre' => 'Gerente General', 'slug' => 'gerente', 'descripcion' => 'Aprobación final de presupuestos y solicitudes'],
-            ['nombre' => 'Financiero', 'slug' => 'financiero', 'descripcion' => 'Gestión financiera y aprobación de nivel 2'],
-            ['nombre' => 'Jefe de Área', 'slug' => 'jefe_area', 'descripcion' => 'Aprobación de nivel 1 y gestión de su área'],
-            ['nombre' => 'Operador', 'slug' => 'operador', 'descripcion' => 'Registro de solicitudes y ejecuciones'],
-            ['nombre' => 'Consultor', 'slug' => 'consultor', 'descripcion' => 'Solo lectura y reportes'],
+            ['nombre' => 'SUPER_ADMIN', 'slug' => 'super_admin', 'descripcion' => 'Acceso total al sistema', 'estado' => 'ACTIVO', 'guard_name' => 'web'],
+            ['nombre' => 'ADMINIS', 'slug' => 'adminis', 'descripcion' => 'Administrador del sistema', 'estado' => 'ACTIVO', 'guard_name' => 'web'],
+            ['nombre' => 'FINANCIERO', 'slug' => 'financiero', 'descripcion' => 'Gestión financiera y aprobación', 'estado' => 'ACTIVO', 'guard_name' => 'web'],
+            ['nombre' => 'PRESUPUESTO', 'slug' => 'presupuesto', 'descripcion' => 'Encargado de presupuesto', 'estado' => 'ACTIVO', 'guard_name' => 'web'],
+            ['nombre' => 'JEFE_AREA', 'slug' => 'jefe_area', 'descripcion' => 'Aprobación de nivel 1 y gestión de su área', 'estado' => 'ACTIVO', 'guard_name' => 'web'],
+            ['nombre' => 'RESPONSABLE_SUCURSAL', 'slug' => 'responsable_sucursal', 'descripcion' => 'Responsable de sucursal', 'estado' => 'ACTIVO', 'guard_name' => 'web'],
+            ['nombre' => 'AUDITOR', 'slug' => 'auditor', 'descripcion' => 'Auditor del sistema - solo lectura', 'estado' => 'ACTIVO', 'guard_name' => 'web'],
+            ['nombre' => 'CONSULTA', 'slug' => 'consulta', 'descripcion' => 'Solo lectura y reportes básicos', 'estado' => 'ACTIVO', 'guard_name' => 'web'],
         ];
 
         foreach ($roles as $role) {
-            Role::updateOrCreate(['slug' => $role['slug']], $role);
+            Role::query()->updateOrCreate(
+                ['nombre' => $role['nombre'], 'guard_name' => 'web'],
+                $role
+            );
         }
     }
 }

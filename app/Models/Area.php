@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class Area extends Model
+class Area extends Model implements Auditable
 {
+    use AuditableTrait;
+
     protected $table = 'areas';
 
     protected $fillable = ['codigo', 'nombre', 'descripcion', 'es_operativa', 'estado'];

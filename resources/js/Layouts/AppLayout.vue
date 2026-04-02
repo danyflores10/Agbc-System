@@ -3,10 +3,12 @@ import { ref, computed, onMounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import AlertNotification from '@/Components/AlertNotification.vue';
 import LoadingSpinner from '@/Components/LoadingSpinner.vue';
+import { usePermisos } from '@/composables/usePermisos';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const flash = computed(() => page.props.flash);
+const { tienePermiso, tieneAlgunPermiso, esAdmin } = usePermisos();
 
 const sidebarOpen = ref(true);
 const mobileMenuOpen = ref(false);
@@ -45,6 +47,7 @@ const menuItems = [
         icon: 'dashboard',
         route: 'dashboard',
         active: 'dashboard',
+        permiso: 'dashboard.ver',
     },
     {
         title: 'PRESUPUESTOS',
@@ -55,21 +58,24 @@ const menuItems = [
         icon: 'calendar',
         route: 'gestiones.index',
         active: 'gestiones.*',
+        permiso: 'gestiones.ver',
     },
     {
         title: 'Partidas Presupuestarias',
         icon: 'list',
         route: 'partidas.index',
         active: 'partidas.*',
+        permiso: 'partidas.ver',
     },
     {
         title: 'Presupuestos',
         icon: 'money',
         route: 'presupuestos.index',
         active: 'presupuestos.*',
+        permiso: 'presupuestos.ver',
         children: [
             { title: 'Lista', route: 'presupuestos.index' },
-            { title: 'Nuevo Presupuesto', route: 'presupuestos.create' },
+            { title: 'Nuevo Presupuesto', route: 'presupuestos.create', permiso: 'presupuestos.crear' },
         ],
     },
     {
@@ -81,9 +87,10 @@ const menuItems = [
         icon: 'request',
         route: 'solicitudes.index',
         active: 'solicitudes.*',
+        permiso: 'solicitudes.ver',
         children: [
             { title: 'Lista', route: 'solicitudes.index' },
-            { title: 'Nueva Solicitud', route: 'solicitudes.create' },
+            { title: 'Nueva Solicitud', route: 'solicitudes.create', permiso: 'solicitudes.crear' },
         ],
     },
     {
@@ -91,12 +98,14 @@ const menuItems = [
         icon: 'check',
         route: 'aprobaciones.index',
         active: 'aprobaciones.*',
+        permiso: 'aprobaciones.ver',
     },
     {
         title: 'Ejecuciones',
         icon: 'execute',
         route: 'ejecuciones.index',
         active: 'ejecuciones.*',
+        permiso: 'ejecuciones.ver',
     },
     {
         title: 'ORGANIZACIÓN',
@@ -107,24 +116,28 @@ const menuItems = [
         icon: 'building',
         route: 'areas.index',
         active: 'areas.*',
+        permiso: 'areas.ver',
     },
     {
         title: 'Sucursales',
         icon: 'location',
         route: 'sucursales.index',
         active: 'sucursales.*',
+        permiso: 'sucursales.ver',
     },
     {
         title: 'Centros de Costo',
         icon: 'money',
         route: 'centros-costo.index',
         active: 'centros-costo.*',
+        permiso: 'centros_costo.ver',
     },
     {
         title: 'Proveedores',
         icon: 'users',
         route: 'proveedores.index',
         active: 'proveedores.*',
+        permiso: 'proveedores.ver',
     },
     {
         title: 'REPORTES',
@@ -135,12 +148,13 @@ const menuItems = [
         icon: 'chart',
         route: 'reportes.index',
         active: 'reportes.*',
+        permiso: 'reportes.ver',
         children: [
             { title: 'General', route: 'reportes.index' },
-            { title: 'Por Área', route: 'reportes.por-area' },
-            { title: 'Por Sucursal', route: 'reportes.por-sucursal' },
-            { title: 'Comparativo', route: 'reportes.comparativo' },
-            { title: 'Por Mes', route: 'reportes.por-mes' },
+            { title: 'Por Área', route: 'reportes.por-area', permiso: 'reportes.por_area' },
+            { title: 'Por Sucursal', route: 'reportes.por-sucursal', permiso: 'reportes.por_sucursal' },
+            { title: 'Comparativo', route: 'reportes.comparativo', permiso: 'reportes.comparativo' },
+            { title: 'Por Mes', route: 'reportes.por-mes', permiso: 'reportes.por_mes' },
         ],
     },
     {
@@ -153,42 +167,77 @@ const menuItems = [
         icon: 'shield',
         route: 'auditoria.index',
         active: 'auditoria.*',
+        permiso: 'auditoria.ver',
+    },
+    {
+        title: 'Registro de Actividad',
+        icon: 'activity',
+        route: 'actividad.index',
+        active: 'actividad.*',
+        permiso: 'auditoria.ver',
     },
     {
         title: 'Laravel Pulse',
         icon: 'chart',
         route: 'sistema.pulse',
         active: 'sistema.pulse',
-        adminOnly: true,
+        permiso: 'sistema.pulse',
     },
     {
         title: 'Roles y Permisos',
         icon: 'shield',
         route: 'roles.index',
         active: 'roles.*',
+        permiso: 'roles.ver',
     },
     {
         title: 'Usuarios',
         icon: 'users',
         route: 'usuarios.index',
         active: 'usuarios.*',
+        permiso: 'usuarios.ver',
     },
 ];
 
 const filteredMenuItems = computed(() => {
-    const isAdmin = user.value?.es_admin;
     const query = searchQuery.value.trim().toLowerCase();
 
-    // Primero filtrar por permisos
+    // Filtrar por permisos del usuario
     let items = menuItems.filter(item => {
-        if (item.adminOnly && !isAdmin) return false;
-        return true;
+        if (item.isHeader) return true;
+        if (!item.permiso) return true;
+        return tienePermiso(item.permiso);
     });
 
-    // Si no hay búsqueda, devolver todo
-    if (!query) return items;
+    // Filtrar hijos por permisos
+    items = items.map(item => {
+        if (!item.children) return item;
+        const filteredChildren = item.children.filter(c => !c.permiso || tienePermiso(c.permiso));
+        return { ...item, children: filteredChildren.length ? filteredChildren : undefined };
+    });
 
-    // Filtrar por búsqueda: sólo items que coincidan (y sus headers)
+    // Si no hay búsqueda, devolver con headers limpios
+    if (!query) {
+        const result = [];
+        let lastHeader = null;
+        let headerAdded = false;
+
+        for (const item of items) {
+            if (item.isHeader) {
+                lastHeader = item;
+                headerAdded = false;
+                continue;
+            }
+            if (lastHeader && !headerAdded) {
+                result.push(lastHeader);
+                headerAdded = true;
+            }
+            result.push(item);
+        }
+        return result;
+    }
+
+    // Filtrar por búsqueda
     const matched = [];
     let lastHeader = null;
     let headerAdded = false;
@@ -244,6 +293,7 @@ const iconMap = {
     bell: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>`,
     shield: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`,
     users: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`,
+    activity: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/></svg>`,
 };
 </script>
 

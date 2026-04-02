@@ -97,7 +97,7 @@ class UserSeeder extends Seeder
             );
 
             if ($role) {
-                $user->roles()->syncWithoutDetaching([$role->id]);
+                $user->syncRoles([$role]);
             }
         }
     }

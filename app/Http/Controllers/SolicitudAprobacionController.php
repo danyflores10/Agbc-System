@@ -69,6 +69,8 @@ class SolicitudAprobacionController extends Controller
             'solicitud_id' => $solicitud->id,
         ]);
 
+        activity('aprobaciones')->causedBy($request->user())->performedOn($solicitud)->event('aprobar')->withProperties(['nivel' => $aprobacion->orden_nivel, 'codigo' => $solicitud->codigo])->log("Aprobó solicitud de gasto #{$solicitud->codigo} en nivel {$aprobacion->orden_nivel}");
+
         return back()->with('success', 'Solicitud aprobada en este nivel.');
     }
 
@@ -91,6 +93,8 @@ class SolicitudAprobacionController extends Controller
             'accion' => 'RECHAZADO',
             'solicitud_id' => $aprobacion->solicitud_id,
         ]);
+
+        activity('aprobaciones')->causedBy($request->user())->performedOn($aprobacion->solicitud)->event('rechazar')->withProperties(['nivel' => $aprobacion->orden_nivel, 'codigo' => $aprobacion->solicitud->codigo, 'motivo' => $request->comentario])->log("Rechazó solicitud de gasto #{$aprobacion->solicitud->codigo} en nivel {$aprobacion->orden_nivel}");
 
         return back()->with('success', 'Solicitud rechazada.');
     }

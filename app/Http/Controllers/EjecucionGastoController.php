@@ -103,6 +103,8 @@ class EjecucionGastoController extends Controller
 
             BitacoraAuditoria::registrar('INSERT', 'ejecuciones_gasto', $ejecucion->id, $request, null, $ejecucion->toArray());
 
+            activity('ejecuciones')->causedBy($request->user())->performedOn($ejecucion)->event('crear')->log("Registró ejecución de gasto {$ejecucion->codigo}");
+
             return $ejecucion;
         });
 
@@ -145,6 +147,8 @@ class EjecucionGastoController extends Controller
             'ruta_archivo' => $path,
             'subido_por' => $request->user()->id,
         ]);
+
+        activity('ejecuciones')->causedBy($request->user())->performedOn($ejecucion)->event('adjuntar')->withProperties(['archivo' => $file->getClientOriginalName()])->log("Subió archivo adjunto '{$file->getClientOriginalName()}' a ejecución {$ejecucion->codigo}");
 
         return back()->with('success', 'Archivo adjuntado correctamente.');
     }

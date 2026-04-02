@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class CentroCosto extends Model
+class CentroCosto extends Model implements Auditable
 {
+    use AuditableTrait;
+
     protected $table = 'centros_costo';
 
     protected $fillable = [

@@ -48,6 +48,8 @@ class PartidaPresupuestariaController extends Controller
         $partida = PartidaPresupuestaria::create($validated);
         BitacoraAuditoria::registrar('INSERT', 'partidas_presupuestarias', $partida->id, $request, null, $partida->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($partida)->event('crear')->log("Creó partida presupuestaria '{$partida->nombre}' ({$partida->codigo})");
+
         return redirect()->route('partidas.index')->with('success', 'Partida presupuestaria creada.');
     }
 
@@ -79,6 +81,8 @@ class PartidaPresupuestariaController extends Controller
         $partida->update($validated);
         BitacoraAuditoria::registrar('UPDATE', 'partidas_presupuestarias', $partida->id, $request, $old, $partida->fresh()->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($partida)->event('actualizar')->log("Actualizó partida presupuestaria '{$partida->nombre}' ({$partida->codigo})");
+
         return redirect()->route('partidas.index')->with('success', 'Partida actualizada.');
     }
 
@@ -87,6 +91,8 @@ class PartidaPresupuestariaController extends Controller
         if ($partida->children()->exists()) {
             return back()->with('error', 'No se puede eliminar una partida con sub-partidas.');
         }
+
+        activity('catálogos')->causedBy(request()->user())->event('eliminar')->withProperties(['codigo' => $partida->codigo, 'nombre' => $partida->nombre])->log("Eliminó partida presupuestaria '{$partida->nombre}' ({$partida->codigo})");
 
         $partida->delete();
         return redirect()->route('partidas.index')->with('success', 'Partida eliminada.');

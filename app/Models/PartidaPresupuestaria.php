@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class PartidaPresupuestaria extends Model
+class PartidaPresupuestaria extends Model implements Auditable
 {
+    use AuditableTrait;
+
     protected $table = 'partidas_presupuestarias';
 
     protected $fillable = [

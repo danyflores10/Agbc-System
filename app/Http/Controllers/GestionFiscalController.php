@@ -61,6 +61,8 @@ class GestionFiscalController extends Controller
 
         BitacoraAuditoria::registrar('INSERT', 'gestiones_fiscales', $gestion->id, $request, null, $gestion->toArray());
 
+        activity('gestiones')->causedBy($request->user())->performedOn($gestion)->event('crear')->log("Creó gestión fiscal {$gestion->anio} con 12 periodos");
+
         return redirect()->route('gestiones.index')->with('success', 'Gestión fiscal creada con 12 periodos.');
     }
 
@@ -93,6 +95,8 @@ class GestionFiscalController extends Controller
         $gestione->update($validated);
         BitacoraAuditoria::registrar('UPDATE', 'gestiones_fiscales', $gestione->id, $request, $old, $gestione->fresh()->toArray());
 
+        activity('gestiones')->causedBy($request->user())->performedOn($gestione)->event('actualizar')->log("Actualizó gestión fiscal {$gestione->anio} — estado: {$gestione->estado}");
+
         return redirect()->route('gestiones.index')->with('success', 'Gestión fiscal actualizada.');
     }
 
@@ -101,6 +105,8 @@ class GestionFiscalController extends Controller
         if ($gestione->presupuestos()->exists()) {
             return back()->with('error', 'No se puede eliminar una gestión con presupuestos.');
         }
+
+        activity('gestiones')->causedBy(request()->user())->event('eliminar')->withProperties(['anio' => $gestione->anio])->log("Eliminó gestión fiscal {$gestione->anio} y sus periodos");
 
         $gestione->periodos()->delete();
         $gestione->delete();

@@ -56,6 +56,8 @@ class PresupuestoController extends Controller
         $presupuesto = Presupuesto::create($validated);
         BitacoraAuditoria::registrar('INSERT', 'presupuestos', $presupuesto->id, $request, null, $presupuesto->toArray());
 
+        activity('presupuestos')->causedBy($request->user())->performedOn($presupuesto)->event('crear')->log("Creó presupuesto '{$presupuesto->nombre}' v{$presupuesto->version}");
+
         return redirect()->route('presupuestos.show', $presupuesto)->with('success', 'Presupuesto creado.');
     }
 
@@ -115,6 +117,12 @@ class PresupuestoController extends Controller
         $presupuesto->update($validated);
         BitacoraAuditoria::registrar('UPDATE', 'presupuestos', $presupuesto->id, $request, $old, $presupuesto->fresh()->toArray());
 
+        if ($validated['estado'] === 'APROBADO' && $old['estado'] !== 'APROBADO') {
+            activity('presupuestos')->causedBy($request->user())->performedOn($presupuesto)->event('aprobar')->log("Aprobó el presupuesto '{$presupuesto->nombre}' v{$presupuesto->version}");
+        } else {
+            activity('presupuestos')->causedBy($request->user())->performedOn($presupuesto)->event('actualizar')->log("Actualizó presupuesto '{$presupuesto->nombre}' — estado: {$presupuesto->estado}");
+        }
+
         return redirect()->route('presupuestos.show', $presupuesto)->with('success', 'Presupuesto actualizado.');
     }
 
@@ -123,6 +131,8 @@ class PresupuestoController extends Controller
         if ($presupuesto->detalles()->exists()) {
             return back()->with('error', 'Elimine primero los detalles del presupuesto.');
         }
+
+        activity('presupuestos')->causedBy(request()->user())->event('eliminar')->withProperties(['nombre' => $presupuesto->nombre, 'version' => $presupuesto->version])->log("Eliminó el presupuesto '{$presupuesto->nombre}' v{$presupuesto->version}");
 
         $presupuesto->delete();
         return redirect()->route('presupuestos.index')->with('success', 'Presupuesto eliminado.');

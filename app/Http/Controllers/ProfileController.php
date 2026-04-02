@@ -32,6 +32,8 @@ class ProfileController extends Controller
         $path = $request->file('avatar')->store('avatars', 'public');
         $user->update(['avatar' => $path]);
 
+        activity('perfil')->causedBy($user)->event('actualizar')->log('Actualizó su avatar de perfil');
+
         return back()->with('success', 'Avatar actualizado correctamente.');
     }
 
@@ -44,6 +46,8 @@ class ProfileController extends Controller
         }
 
         $user->update(['avatar' => null]);
+
+        activity('perfil')->causedBy($user)->event('actualizar')->log('Eliminó su avatar de perfil');
 
         return back()->with('success', 'Avatar eliminado.');
     }
@@ -61,6 +65,8 @@ class ProfileController extends Controller
 
         $user->update($validated);
 
+        activity('perfil')->causedBy($user)->event('actualizar')->log('Actualizó su información de perfil');
+
         return back()->with('success', 'Perfil actualizado correctamente.');
     }
 
@@ -74,6 +80,8 @@ class ProfileController extends Controller
         $request->user()->update([
             'password_hash' => Hash::make($validated['password']),
         ]);
+
+        activity('perfil')->causedBy($request->user())->event('cambio_password')->log('Cambió su contraseña');
 
         return back()->with('success', 'Contraseña actualizada correctamente.');
     }

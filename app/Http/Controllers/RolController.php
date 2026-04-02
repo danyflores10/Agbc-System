@@ -42,21 +42,26 @@ class RolController extends Controller
             'permisos.*' => 'exists:permisos,id',
         ]);
 
+        $validated['guard_name'] = 'web';
         $role = Role::create($validated);
-        $role->permisos()->sync($request->permisos ?? []);
+        $role->syncPermissions(
+            Permiso::whereIn('id', $request->permisos ?? [])->get()
+        );
 
         BitacoraAuditoria::registrar('INSERT', 'roles', $role->id, $request, null, $role->toArray());
+
+        activity('usuarios')->causedBy($request->user())->performedOn($role)->event('crear')->log("Creó el rol '{$role->nombre}'");
 
         return redirect()->route('roles.index')->with('success', 'Rol creado correctamente.');
     }
 
     public function edit(Role $role)
     {
-        $role->load('permisos');
+        $role->load('permissions');
 
         return Inertia::render('Roles/Form', [
             'role' => $role,
-            'permisosSeleccionados' => $role->permisos->pluck('id'),
+            'permisosSeleccionados' => $role->permissions->pluck('id'),
             'permisos' => Permiso::orderBy('modulo')->orderBy('nombre')->get(),
             'permisosAgrupados' => Permiso::orderBy('modulo')->get()->groupBy('modulo'),
         ]);
@@ -74,9 +79,13 @@ class RolController extends Controller
 
         $old = $role->toArray();
         $role->update($validated);
-        $role->permisos()->sync($request->permisos ?? []);
+        $role->syncPermissions(
+            Permiso::whereIn('id', $request->permisos ?? [])->get()
+        );
 
         BitacoraAuditoria::registrar('UPDATE', 'roles', $role->id, $request, $old, $role->fresh()->toArray());
+
+        activity('usuarios')->causedBy($request->user())->performedOn($role)->event('actualizar')->log("Actualizó el rol '{$role->nombre}'");
 
         return redirect()->route('roles.index')->with('success', 'Rol actualizado correctamente.');
     }
@@ -87,7 +96,9 @@ class RolController extends Controller
             return back()->with('error', 'No se puede eliminar un rol con usuarios asignados.');
         }
 
-        $role->permisos()->detach();
+        activity('usuarios')->causedBy(request()->user())->event('eliminar')->withProperties(['nombre' => $role->nombre])->log("Eliminó el rol '{$role->nombre}'");
+
+        $role->syncPermissions([]);
         $role->delete();
 
         return redirect()->route('roles.index')->with('success', 'Rol eliminado correctamente.');

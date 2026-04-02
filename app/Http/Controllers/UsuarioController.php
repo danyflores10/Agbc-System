@@ -75,9 +75,9 @@ class UsuarioController extends Controller
             'avatar' => $avatarPath,
         ]);
 
-        $user->roles()->sync($request->roles ?? []);
-
-        // Sync centros de costo con es_principal
+        $user->syncRoles(
+            \App\Models\Role::whereIn('id', $request->roles ?? [])->get()
+        );
         if ($request->centros_costo) {
             $syncData = [];
             foreach ($request->centros_costo as $ccId) {
@@ -87,6 +87,8 @@ class UsuarioController extends Controller
         }
 
         BitacoraAuditoria::registrar('INSERT', 'usuarios', $user->id, $request, null, $user->toArray());
+
+        activity('usuarios')->causedBy($request->user())->performedOn($user)->event('crear')->log("Creó el usuario '{$user->nombres} {$user->apellidos}' ({$user->email})");
 
         return redirect()->route('usuarios.index')->with('success', 'Usuario creado correctamente.');
     }
@@ -137,7 +139,9 @@ class UsuarioController extends Controller
         }
 
         $usuario->update($updateData);
-        $usuario->roles()->sync($request->roles ?? []);
+        $usuario->syncRoles(
+            \App\Models\Role::whereIn('id', $request->roles ?? [])->get()
+        );
 
         if ($request->centros_costo) {
             $syncData = [];
@@ -150,6 +154,8 @@ class UsuarioController extends Controller
         }
 
         BitacoraAuditoria::registrar('UPDATE', 'usuarios', $usuario->id, $request, $old, $usuario->fresh()->toArray());
+
+        activity('usuarios')->causedBy($request->user())->performedOn($usuario)->event('actualizar')->log("Actualizó al usuario '{$usuario->nombres} {$usuario->apellidos}'");
 
         return redirect()->route('usuarios.index')->with('success', 'Usuario actualizado correctamente.');
     }
@@ -170,6 +176,9 @@ class UsuarioController extends Controller
             $usuario->fresh()->toArray()
         );
 
+        $accion = $nuevoEstado === 'ACTIVO' ? 'Activó' : 'Desactivó';
+        activity('usuarios')->causedBy(request()->user())->performedOn($usuario)->event('cambio_estado')->log("{$accion} al usuario '{$usuario->nombre_completo}'");
+
         $mensaje = $nuevoEstado === 'ACTIVO'
             ? "Usuario {$usuario->nombre_completo} activado correctamente."
             : "Usuario {$usuario->nombre_completo} desactivado correctamente.";
@@ -184,6 +193,8 @@ class UsuarioController extends Controller
         }
 
         $usuario->update(['avatar' => null]);
+
+        activity('usuarios')->causedBy(request()->user())->performedOn($usuario)->event('actualizar')->log("Eliminó avatar del usuario '{$usuario->nombres} {$usuario->apellidos}'");
 
         return back()->with('success', 'Avatar eliminado correctamente.');
     }

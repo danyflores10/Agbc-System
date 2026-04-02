@@ -23,6 +23,8 @@ class PresupuestoDetalleController extends Controller
         $detalle = PresupuestoDetalle::create($validated);
         BitacoraAuditoria::registrar('INSERT', 'presupuesto_detalles', $detalle->id, $request, null, $detalle->toArray());
 
+        activity('presupuestos')->causedBy($request->user())->performedOn($detalle)->event('crear')->log("Agregó detalle al presupuesto (monto: {$detalle->monto_inicial})");
+
         return back()->with('success', 'Detalle de presupuesto agregado.');
     }
 
@@ -38,11 +40,15 @@ class PresupuestoDetalleController extends Controller
         $detalle->update($validated);
         BitacoraAuditoria::registrar('UPDATE', 'presupuesto_detalles', $detalle->id, $request, $old, $detalle->fresh()->toArray());
 
+        activity('presupuestos')->causedBy($request->user())->performedOn($detalle)->event('actualizar')->log("Actualizó detalle de presupuesto (monto: {$detalle->monto_inicial})");
+
         return back()->with('success', 'Detalle actualizado.');
     }
 
     public function destroy(PresupuestoDetalle $detalle)
     {
+        activity('presupuestos')->causedBy(request()->user())->event('eliminar')->withProperties(['presupuesto_id' => $detalle->presupuesto_id])->log("Eliminó detalle de presupuesto #{$detalle->id}");
+
         $detalle->delete();
         return back()->with('success', 'Detalle eliminado.');
     }

@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
-class SolicitudAprobacion extends Model
+class SolicitudAprobacion extends Model implements Auditable
 {
+    use AuditableTrait;
+
     protected $table = 'solicitud_aprobaciones';
 
     protected $fillable = [

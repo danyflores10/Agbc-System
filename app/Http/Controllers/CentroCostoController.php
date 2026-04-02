@@ -51,6 +51,8 @@ class CentroCostoController extends Controller
         $centro = CentroCosto::create($validated);
         BitacoraAuditoria::registrar('INSERT', 'centros_costo', $centro->id, $request, null, $centro->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($centro)->event('crear')->log("Creó el centro de costo '{$centro->nombre}' ({$centro->codigo})");
+
         return redirect()->route('centros-costo.index')->with('success', 'Centro de costo creado correctamente.');
     }
 
@@ -79,6 +81,8 @@ class CentroCostoController extends Controller
         $centros_costo->update($validated);
         BitacoraAuditoria::registrar('UPDATE', 'centros_costo', $centros_costo->id, $request, $old, $centros_costo->fresh()->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($centros_costo)->event('actualizar')->log("Actualizó el centro de costo '{$centros_costo->nombre}' ({$centros_costo->codigo})");
+
         return redirect()->route('centros-costo.index')->with('success', 'Centro de costo actualizado correctamente.');
     }
 
@@ -87,6 +91,8 @@ class CentroCostoController extends Controller
         if ($centros_costo->presupuestoDetalles()->exists()) {
             return back()->with('error', 'No se puede eliminar un centro de costo con presupuestos asignados.');
         }
+
+        activity('catálogos')->causedBy(request()->user())->event('eliminar')->withProperties(['codigo' => $centros_costo->codigo, 'nombre' => $centros_costo->nombre])->log("Eliminó el centro de costo '{$centros_costo->nombre}' ({$centros_costo->codigo})");
 
         $centros_costo->delete();
         return redirect()->route('centros-costo.index')->with('success', 'Centro de costo eliminado.');

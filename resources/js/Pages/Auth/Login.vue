@@ -62,9 +62,9 @@ const submit = () => {
             <!-- Contenido central -->
             <div :class="['max-w-md text-center relative z-10 transition-all duration-1000 ease-out', mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10']">
                 <!-- Logo con efecto glow -->
-                <div class="relative mx-auto mb-8 w-36 h-36">
+                <div class="relative mx-auto mb-8 w-52 h-52">
                     <div class="absolute inset-0 bg-brand-gold/20 rounded-3xl blur-xl animate-pulse"></div>
-                    <div class="relative w-36 h-36 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl p-4">
+                    <div class="relative w-52 h-52 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl p-5">
                         <img src="/images/Logooriginal.png" alt="Logo AGBC" class="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(245,197,24,0.3)]" />
                     </div>
                 </div>

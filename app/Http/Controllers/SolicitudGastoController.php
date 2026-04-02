@@ -102,6 +102,8 @@ class SolicitudGastoController extends Controller
             }
 
             BitacoraAuditoria::registrar('INSERT', 'solicitudes_gasto', $solicitud->id, $request, null, $solicitud->toArray());
+
+            activity('solicitudes')->causedBy($request->user())->performedOn($solicitud)->event('crear')->withProperties(['codigo' => $solicitud->codigo, 'estado' => $solicitud->estado])->log("Creó solicitud de gasto #{$solicitud->codigo} ({$validated['estado']})");
         });
 
         return redirect()->route('solicitudes.index')->with('success', 'Solicitud de gasto creada.');
@@ -181,6 +183,12 @@ class SolicitudGastoController extends Controller
             }
 
             BitacoraAuditoria::registrar('UPDATE', 'solicitudes_gasto', $solicitude->id, $request, $old, $solicitude->fresh()->toArray());
+
+            $desc = "Actualizó solicitud de gasto #{$solicitude->codigo}";
+            if ($validated['estado'] === 'PENDIENTE' && $solicitude->getOriginal('estado') === 'BORRADOR') {
+                $desc = "Envió a aprobación la solicitud #{$solicitude->codigo}";
+            }
+            activity('solicitudes')->causedBy($request->user())->performedOn($solicitude)->event('actualizar')->withProperties(['codigo' => $solicitude->codigo, 'estado' => $solicitude->estado])->log($desc);
         });
 
         return redirect()->route('solicitudes.show', $solicitude)->with('success', 'Solicitud actualizada.');
@@ -191,6 +199,8 @@ class SolicitudGastoController extends Controller
         if (!in_array($solicitude->estado, ['BORRADOR', 'ANULADA'])) {
             return back()->with('error', 'Solo se pueden eliminar solicitudes en BORRADOR o ANULADA.');
         }
+
+        activity('solicitudes')->causedBy(request()->user())->event('eliminar')->withProperties(['codigo' => $solicitude->codigo])->log("Eliminó solicitud de gasto #{$solicitude->codigo}");
 
         $solicitude->detalles()->delete();
         $solicitude->aprobaciones()->delete();

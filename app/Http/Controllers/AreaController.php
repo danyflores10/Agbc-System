@@ -42,6 +42,8 @@ class AreaController extends Controller
         $area = Area::create($validated);
         BitacoraAuditoria::registrar('INSERT', 'areas', $area->id, $request, null, $area->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($area)->event('crear')->log("Creó el área '{$area->nombre}' ({$area->codigo})");
+
         return redirect()->route('areas.index')->with('success', 'Área creada correctamente.');
     }
 
@@ -64,6 +66,8 @@ class AreaController extends Controller
         $area->update($validated);
         BitacoraAuditoria::registrar('UPDATE', 'areas', $area->id, $request, $old, $area->fresh()->toArray());
 
+        activity('catálogos')->causedBy($request->user())->performedOn($area)->event('actualizar')->log("Actualizó el área '{$area->nombre}' ({$area->codigo})");
+
         return redirect()->route('areas.index')->with('success', 'Área actualizada correctamente.');
     }
 
@@ -72,6 +76,8 @@ class AreaController extends Controller
         if ($area->centrosCosto()->exists()) {
             return back()->with('error', 'No se puede eliminar un área con centros de costo asignados.');
         }
+
+        activity('catálogos')->causedBy(request()->user())->event('eliminar')->withProperties(['codigo' => $area->codigo, 'nombre' => $area->nombre])->log("Eliminó el área '{$area->nombre}' ({$area->codigo})");
 
         $area->delete();
         return redirect()->route('areas.index')->with('success', 'Área eliminada correctamente.');
